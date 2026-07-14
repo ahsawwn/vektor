@@ -1,0 +1,266 @@
+/* Vektor — High-Density Minimalist Theme */
+
+/* ── Global ─────────────────────────────────────────── */
+QWidget {
+    background-color: #0F172A;
+    color: #E2E8F0;
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", monospace;
+    font-size: 13px;
+}
+
+/* ── Main Window ────────────────────────────────────── */
+QMainWindow {
+    background-color: #0F172A;
+}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+#Sidebar {
+    background-color: #1E293B;
+    border-right: 1px solid #334155;
+    min-width: 220px;
+    max-width: 220px;
+}
+
+#SidebarTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #F1F5F9;
+    padding: 16px 16px 8px 16px;
+}
+
+#SidebarLabel {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px 4px 16px;
+}
+
+#StatusIndicator {
+    padding: 4px 16px;
+    font-size: 12px;
+}
+
+#StatusDot {
+    min-width: 8px;
+    max-width: 8px;
+    min-height: 8px;
+    max-height: 8px;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+#StatusDot[state="active"] {
+    background-color: #22C55E;
+}
+
+#StatusDot[state="inactive"] {
+    background-color: #EF4444;
+}
+
+#StatusDot[state="thinking"] {
+    background-color: #F59E0B;
+}
+
+#RecentConversations {
+    background-color: transparent;
+    border: none;
+    font-size: 12px;
+    padding: 4px 16px;
+}
+
+#RecentConversations::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    color: #94A3B8;
+}
+
+#RecentConversations::item:selected {
+    background-color: #334155;
+    color: #F1F5F9;
+}
+
+#RecentConversations::item:hover {
+    background-color: #2D3A4F;
+    color: #E2E8F0;
+}
+
+/* ── Chat Area ───────────────────────────────────────── */
+#ChatArea {
+    background-color: #0F172A;
+    border: none;
+}
+
+#ChatScrollArea {
+    background-color: #0F172A;
+    border: none;
+}
+
+/* Message bubble containers */
+#MessageContainer {
+    padding: 8px 24px;
+}
+
+#UserMessage {
+    background-color: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 4px 64px 4px 16px;
+}
+
+#AssistantMessage {
+    background-color: #0F172A;
+    border: 1px solid #1E3A5C;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 4px 16px 4px 64px;
+}
+
+#MessageRole {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: 4px;
+}
+
+#MessageTimestamp {
+    font-size: 10px;
+    color: #475569;
+    padding-left: 8px;
+}
+
+#MessageContent {
+    background-color: transparent;
+    border: none;
+    color: #E2E8F0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Code blocks in messages */
+#MessageContent[class="code"] {
+    background-color: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 12px;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 12px;
+    color: #A5B4FC;
+}
+
+/* ── Input Bar ───────────────────────────────────────── */
+#InputBar {
+    background-color: #1E293B;
+    border-top: 1px solid #334155;
+    padding: 12px 16px;
+}
+
+#InputField {
+    background-color: #0F172A;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: #E2E8F0;
+    font-size: 13px;
+    selection-background-color: #3B82F6;
+}
+
+#InputField:focus {
+    border: 1px solid #3B82F6;
+}
+
+#SendButton {
+    background-color: #3B82F6;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 80px;
+}
+
+#SendButton:hover {
+    background-color: #2563EB;
+}
+
+#SendButton:pressed {
+    background-color: #1D4ED8;
+}
+
+/* ── Status Bar ──────────────────────────────────────── */
+#StatusBar {
+    background-color: #1E293B;
+    border-top: 1px solid #334155;
+    padding: 4px 16px;
+    font-size: 11px;
+    color: #64748B;
+}
+
+/* ── Scrollbars ──────────────────────────────────────── */
+QScrollBar:vertical {
+    background-color: #0F172A;
+    width: 8px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #334155;
+    border-radius: 4px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #475569;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* ── ComboBox ─────────────────────────────────────────── */
+QComboBox {
+    background-color: #0F172A;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #E2E8F0;
+    font-size: 12px;
+    min-width: 120px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid #64748B;
+    margin-right: 6px;
+}
+
+QComboBox:hover {
+    border: 1px solid #475569;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1E293B;
+    border: 1px solid #334155;
+    selection-background-color: #334155;
+    color: #E2E8F0;
+    padding: 4px;
+}
+
+/* ── Splitter ─────────────────────────────────────────── */
+QSplitter::handle {
+    background-color: #334155;
+    width: 1px;
+}
