@@ -2,6 +2,7 @@ from datetime import datetime
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QHBoxLayout,
     QLabel,
     QScrollArea,
     QTextBrowser,
@@ -26,19 +27,21 @@ class MessageBubble(QWidget):
         layout.setSpacing(4)
 
         header = QWidget()
-        header_layout = QVBoxLayout(header)
+        header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(2)
+        header_layout.setSpacing(8)
 
         role_label = QLabel("You" if role == "user" else "Vektor")
         role_label.setObjectName("MessageRole")
+        header_layout.addWidget(role_label)
 
         if timestamp:
             ts = QLabel(timestamp.strftime("%H:%M"))
             ts.setObjectName("MessageTimestamp")
             header_layout.addWidget(ts)
 
-        layout.addWidget(role_label)
+        header_layout.addStretch()
+        layout.addWidget(header)
 
         self.text_browser = QTextBrowser()
         self.text_browser.setObjectName("MessageContent")
@@ -51,11 +54,9 @@ class MessageBubble(QWidget):
 
         if role == "user":
             self.setObjectName("UserMessage")
-            role_label.setText("You")
             role_label.setStyleSheet("color: #60A5FA;")
         else:
             self.setObjectName("AssistantMessage")
-            role_label.setText("Vektor")
             role_label.setStyleSheet("color: #A78BFA;")
 
         layout.addWidget(self.text_browser)
