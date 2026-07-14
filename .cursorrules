@@ -1,0 +1,28 @@
+# Vektor — Developer Guardrails
+
+## Language & Style
+- Python 3.12+ with strict type annotations.
+- Use SQLModel for all database schemas; avoid raw SQL.
+- Prefer `typer` for CLI; never use `argparse` or `click`.
+- Use `rich` for console output; never use plain `print` for user-facing text.
+- All Pydantic/SQLModel models must use `| None` (PEP 604) syntax, not `Optional`.
+
+## Architecture
+- Core business logic belongs in `core/`; CLI wiring belongs in `main.py` only.
+- Database sessions: always use `with Session(engine) as session:` context manager.
+- Vector memory: single `VectorMemory` instance per process; wrap ChromaDB calls.
+- Never import `ollama` directly outside `core/agent.py`.
+
+## Persistence
+- Every `chat` invocation must persist both user input and assistant response.
+- Both SQLite and ChromaDB must be updated on every turn.
+- User preferences set via `vektor remember` are authoritative; always load them on chat init.
+
+## Error Handling
+- Wrap LLM calls in try/except; surface clear messages to the user via `rich`.
+- If ChromaDB is unavailable, degrade gracefully (log warning, continue without semantic memory).
+- If SQLite is unavailable, raise immediately — the system cannot function without persistence.
+
+## Git
+- Commits should be atomic and descriptive.
+- No secrets, API keys, or credentials in the repository.
