@@ -55,6 +55,10 @@ class MessageBubble(QWidget):
         if role == "user":
             self.setObjectName("UserMessage")
             role_label.setStyleSheet("color: #60A5FA;")
+        elif role == "system":
+            self.setObjectName("SystemMessage")
+            role_label.setStyleSheet("color: #94A3B8;")
+            role_label.setText("System")
         else:
             self.setObjectName("AssistantMessage")
             role_label.setStyleSheet("color: #A78BFA;")

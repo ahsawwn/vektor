@@ -264,3 +264,31 @@ QSplitter::handle {
     background-color: #334155;
     width: 1px;
 }
+
+/* ── Preview Panel ───────────────────────────────────── */
+#PreviewPanel {
+    background-color: #0F172A;
+    border-left: 1px solid #334155;
+}
+
+#WebPreview {
+    background-color: #FFFFFF;
+    border: none;
+}
+
+/* ── Voice Toggle ─────────────────────────────────────── */
+#VoiceToggle {
+    padding: 0px;
+}
+
+/* ── System Message ───────────────────────────────────── */
+#SystemMessage {
+    background-color: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 4px 64px;
+    color: #94A3B8;
+    font-size: 12px;
+    text-align: center;
+}
