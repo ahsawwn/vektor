@@ -14,6 +14,6 @@ CHROMA_PATH = DATA_DIR / "chroma_db"
 WORKSPACE_DIR = DATA_DIR / "workspace"
 WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
 
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-DEEPSEEK_MODEL = "deepseek-chat"
-DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "mistralai/mistral-nemo")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"

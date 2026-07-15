@@ -1,13 +1,13 @@
 from sqlmodel import Session, col, select
 
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
+from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_MODEL
 from database.connection import engine
 from database.models import ConversationLog, UserPreference
 from memory.vector_store import VectorMemory
 
 
 class VektorAgent:
-    def __init__(self, model: str = DEEPSEEK_MODEL) -> None:
+    def __init__(self, model: str = OPENROUTER_MODEL) -> None:
         self.model = model
         self.memory = VectorMemory()
 
@@ -35,8 +35,8 @@ class VektorAgent:
         messages.append({"role": "user", "content": user_input})
 
         resp = httpx.post(
-            f"{DEEPSEEK_BASE_URL}/chat/completions",
-            headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}"},
+            f"{OPENROUTER_BASE_URL}/chat/completions",
+            headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
             json={"model": self.model, "messages": messages},
             timeout=60,
         )

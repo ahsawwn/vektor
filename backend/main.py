@@ -13,7 +13,7 @@ from fastapi import FastAPI, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, WORKSPACE_DIR
+from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_MODEL, WORKSPACE_DIR
 from core.agent import VektorAgent
 
 from . import commands, database as db, memory_vector, voice_engine
@@ -50,9 +50,9 @@ _REMEMBER_RE = re.compile(
 async def _llm_chat(messages: list[dict]) -> str:
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(
-            f"{DEEPSEEK_BASE_URL}/chat/completions",
-            headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}"},
-            json={"model": DEEPSEEK_MODEL, "messages": messages},
+            f"{OPENROUTER_BASE_URL}/chat/completions",
+            headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+            json={"model": OPENROUTER_MODEL, "messages": messages},
         )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
@@ -103,19 +103,20 @@ async def websocket_endpoint(ws: WebSocket):
     global _has_greeted
     await ws.accept()
     _active_connections.add(ws)
-    await ws.send_json({"type": "status", "state": "idle", "model": DEEPSEEK_MODEL})
+    await ws.send_json({"type": "status", "state": "idle", "model": OPENROUTER_MODEL})
 
     msg_count = db.count_messages()
-    if msg_count == 0 and not _has_greeted:
+    if not _has_greeted:
         _has_greeted = True
         greeting = "Vektor online. System ready."
         await ws.send_json({"type": "message", "role": "assistant", "content": greeting})
         loop = asyncio.get_event_loop()
         try:
             await loop.run_in_executor(None, voice_engine.speak, greeting)
-        except Exception:
-            pass
-    else:
+        except Exception as e:
+            print(f"TTS error: {e}")
+
+    if msg_count > 0:
         history = db.get_recent_messages(20)
         if history:
             await ws.send_json({"type": "history", "messages": history})
@@ -253,7 +254,7 @@ async def serve_upload(name: str):
 @app.get("/api/status")
 async def api_status():
     return {
-        "model": DEEPSEEK_MODEL,
+        "model": OPENROUTER_MODEL,
         "messages": db.count_messages(),
         "preferences": db.get_preferences(),
         "vector_count": memory_vector.count(),
