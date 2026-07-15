@@ -1,53 +1,44 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Database, Cpu, Globe, BookmarkCheck, Zap } from 'lucide-react';
+import { Mic, Database, Cpu, Globe, BookmarkCheck, Zap, Volume2, FolderOpen } from 'lucide-react';
 import ChatPanel from './components/ChatPanel';
 import JarvisCore from './components/JarvisCore';
 import Terminal from './components/Terminal';
+import FileBrowser from './components/FileBrowser';
 import { useWebSocket } from './hooks/useWebSocket';
 
 const WS_URL = `ws://${window.location.hostname}:8000/ws`;
 
-function useTypewriter(text: string, speed: number = 30) {
-  const [displayed, setDisplayed] = useState('');
-  useEffect(() => {
-    if (!text) { setDisplayed(''); return; }
-    let i = 0;
-    setDisplayed('');
-    const timer = setInterval(() => {
-      setDisplayed(text.slice(0, i + 1));
-      i++;
-      if (i >= text.length) clearInterval(timer);
-    }, speed);
-    return () => clearInterval(timer);
-  }, [text, speed]);
-  return displayed;
-}
+type Tab = 'chat' | 'files';
 
 export default function App() {
+  const [tab, setTab] = useState<Tab>('chat');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const {
-    connected,
-    status,
-    messages,
-    commandOutput,
-    previewPath,
-    memoryUpdate,
-    sendMessage,
-    triggerVoice,
-    clearTerminal,
+    connected, status, messages, commandOutput, memoryUpdate,
+    sendMessage, triggerVoice, speak, clearTerminal,
   } = useWebSocket(WS_URL);
 
   const isDisabled = status !== 'idle';
-  const bootText = useTypewriter(
-    connected ? 'SYSTEM ONLINE // VEKTOR v0.4.0 // SECURE CONNECTION ESTABLISHED' : 'CONNECTING...',
-    25
-  );
 
   const sidebarItems = [
-    { icon: Database, label: 'SQLite_DB', active: connected },
-    { icon: Cpu, label: 'Local_LLM', active: status === 'thinking', state: status },
+    { icon: Database, label: 'SQLite', active: connected },
+    { icon: Cpu, label: 'DeepSeek', active: status === 'thinking', state: status },
     { icon: Globe, label: 'WebSocket', active: connected },
   ];
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`http://${window.location.hostname}:8000/api/upload`, { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.url) {
+      sendMessage(`[image](${window.location.origin}${data.url})`);
+    }
+  };
 
   return (
     <div className="flex h-screen" style={{ background: '#0a0a0a' }}>
@@ -55,113 +46,86 @@ export default function App() {
       <motion.aside
         initial={{ x: -200, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="w-[200px] shrink-0 flex flex-col"
-        style={{ background: '#0d1117', borderRight: '1px solid #003300' }}
+        className="w-48 shrink-0 flex flex-col"
+        style={{ background: '#0d1117', borderRight: '1px solid #21262d' }}
       >
-        <div className="px-4 pt-5 pb-4 border-b border-[#003300]">
-          <h1 className="text-[16px] font-bold tracking-[0.3em]" style={{ color: '#00ff41', textShadow: '0 0 10px rgba(0,255,65,0.5)' }}>
+        <div className="px-4 pt-5 pb-4 border-b border-[#21262d]">
+          <h1 className="text-base font-bold tracking-widest text-[#3fb950]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             VEKTOR
           </h1>
-          <div className="mt-2 text-[10px]" style={{ color: '#006600' }}>
-            {bootText}
-            <span className="animate-pulse" style={{ color: '#00ff41' }}>▌</span>
+          <div className="mt-1.5 text-[11px] text-[#8b949e] font-mono">
+            {connected ? '● ONLINE' : '○ OFFLINE'}
           </div>
         </div>
 
+        {/* Tabs */}
+        <div className="px-3 mt-3 space-y-1">
+          <button onClick={() => setTab('chat')}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs rounded-md transition-colors"
+            style={{ background: tab === 'chat' ? '#161b22' : 'transparent', color: tab === 'chat' ? '#3fb950' : '#8b949e' }}>
+            <Zap size={13} /> Chat
+          </button>
+          <button onClick={() => setTab('files')}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs rounded-md transition-colors"
+            style={{ background: tab === 'files' ? '#161b22' : 'transparent', color: tab === 'files' ? '#3fb950' : '#8b949e' }}>
+            <FolderOpen size={13} /> Files
+          </button>
+        </div>
+
         <div className="px-3 mt-4 mb-2">
-          <span className="text-[9px] tracking-[0.2em]" style={{ color: '#006600' }}>// SYSTEM STATUS</span>
+          <span className="text-[10px] font-semibold tracking-wider text-[#8b949e]">STATUS</span>
         </div>
         <div className="px-3 space-y-2">
           {sidebarItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-2.5 px-2 py-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                item.active ? 'bg-[#00ff41]' : 'bg-[#006600]'
-              } ${item.state === 'thinking' ? 'animate-pulse' : ''}`}
-                style={{ boxShadow: item.active ? '0 0 6px rgba(0,255,65,0.8)' : 'none' }}
-              />
-              <item.icon size={11} style={{ color: '#006600' }} />
-              <span className="text-[11px]" style={{ color: '#00cc33' }}>{item.label}</span>
+            <div key={item.label} className="flex items-center gap-2.5 px-2 py-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${item.active ? 'bg-[#3fb950]' : 'bg-[#8b949e]'} ${item.state === 'thinking' ? 'animate-pulse' : ''}`} />
+              <item.icon size={11} className="text-[#8b949e]" />
+              <span className="text-xs text-[#8b949e]">{item.label}</span>
             </div>
           ))}
         </div>
 
-        <div className="px-3 mt-4 mb-2">
-          <span className="text-[9px] tracking-[0.2em]" style={{ color: '#006600' }}>// ACTIVE_MODEL</span>
-        </div>
-        <div className="px-4">
-          <span className="text-[11px]" style={{ color: '#00ff41' }}>llama3.2:1b</span>
-        </div>
-
-        <div className="mt-auto px-4 py-3 border-t border-[#003300]">
-          <div className="text-[9px]" style={{ color: '#006600' }}>
-            {connected ? '● ONLINE' : '○ OFFLINE'}
-          </div>
+        <div className="mt-auto px-4 py-3 border-t border-[#21262d]">
+          <div className="text-[10px] text-[#8b949e] font-mono">deepseek-chat</div>
         </div>
       </motion.aside>
 
       {/* Main */}
       <div className="flex-1 flex flex-col relative">
         {/* Top bar */}
-        <header className="flex items-center justify-between px-6 py-2.5" style={{ borderBottom: '1px solid #003300', background: '#0d1117' }}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-3"
-          >
-            <Zap size={12} style={{ color: connected ? '#00ff41' : '#006600' }} />
-            <span className="text-[10px] tracking-wider" style={{ color: '#006600' }}>
-              {connected ? 'VEKTOR_READY' : 'INITIALIZING...'}
+        <header className="flex items-center justify-between px-5 py-2.5 border-b border-[#21262d]" style={{ background: '#0d1117' }}>
+          <div className="flex items-center gap-3">
+            <Zap size={13} className={connected ? 'text-[#3fb950]' : 'text-[#8b949e]'} />
+            <span className="text-xs font-mono text-[#8b949e]">
+              {connected ? '/vektor/ready' : '/vektor/connecting'}
             </span>
-          </motion.div>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={triggerVoice}
-            disabled={isDisabled}
-            className="flex items-center gap-2 px-3 py-1.5 text-[10px] tracking-wider uppercase disabled:opacity-40"
-            style={{
-              background: '#0a0a0a',
-              border: '1px solid #003300',
-              color: status === 'listening' ? '#00ff41' : '#006600',
-              boxShadow: status === 'listening' ? '0 0 10px rgba(0,255,65,0.3)' : 'none',
-            }}
-          >
-            <Mic size={12} />
-            {status === 'listening' ? 'RECEIVING_INPUT...' : 'Voice_Trigger'}
-          </motion.button>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* TTS Toggle */}
+            <button onClick={() => speak('Test voice')}
+              className="flex items-center gap-1.5 px-2 py-1 rounded text-xs border border-[#21262d] text-[#8b949e] hover:text-[#3fb950] transition-colors">
+              <Volume2 size={12} /> Speak
+            </button>
+            {/* Voice Trigger */}
+            <button onClick={triggerVoice} disabled={isDisabled}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border disabled:opacity-40 transition-colors"
+              style={{ borderColor: status === 'listening' ? '#3fb950' : '#21262d', color: status === 'listening' ? '#3fb950' : '#8b949e' }}>
+              <Mic size={12} />
+              {status === 'listening' ? 'Listening...' : 'Voice'}
+            </button>
+          </div>
         </header>
 
         {/* Content */}
         <div className="flex-1 flex relative overflow-hidden">
-          <div className="flex-1 flex flex-col">
-            <ChatPanel messages={messages} onSend={sendMessage} disabled={isDisabled} />
-          </div>
-
-          {/* Preview panel */}
-          <AnimatePresence>
-            {previewPath && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 500, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                style={{ borderLeft: '1px solid #003300', background: '#0d1117' }}
-                className="overflow-hidden shrink-0"
-              >
-                <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid #003300', color: '#006600' }}>
-                  <span className="text-[9px] tracking-wider uppercase">// LIVE_PREVIEW</span>
-                </div>
-                <iframe
-                  src={previewPath}
-                  className="w-full"
-                  style={{ height: 'calc(100% - 33px)', background: '#0a0a0a' }}
-                  title="Preview"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {tab === 'chat' && (
+            <div className="flex-1 flex flex-col">
+              <ChatPanel messages={messages} onSend={sendMessage} disabled={isDisabled} />
+              {/* Hidden file input */}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </div>
+          )}
+          {tab === 'files' && <FileBrowser />}
         </div>
 
         {/* Memory notification */}
@@ -171,13 +135,13 @@ export default function App() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="absolute top-14 right-6 z-50 px-4 py-2"
-              style={{ background: '#0d1117', border: '1px solid #00ff41', boxShadow: '0 0 15px rgba(0,255,65,0.2)' }}
+              className="absolute top-14 right-6 z-50 px-4 py-2 rounded border"
+              style={{ background: '#0d1117', borderColor: '#3fb950' }}
             >
               <div className="flex items-center gap-2">
-                <BookmarkCheck size={12} style={{ color: '#00ff41' }} />
-                <span className="text-[11px]" style={{ color: '#00cc33' }}>
-                  MEMORY_WRITTEN: <span style={{ color: '#00ff41' }}>{memoryUpdate.key}</span>
+                <BookmarkCheck size={13} className="text-[#3fb950]" />
+                <span className="text-xs text-[#8b949e]">
+                  Memory: <span className="text-[#3fb950] font-mono">{memoryUpdate.key}</span>
                 </span>
               </div>
             </motion.div>
@@ -190,10 +154,10 @@ export default function App() {
 
       {/* Jarvis Orb */}
       <motion.div
-        className="fixed bottom-6 right-6 z-40"
+        className="fixed bottom-5 right-5 z-40"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.5 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
       >
         <JarvisCore status={status} onToggleVoice={triggerVoice} />
       </motion.div>
