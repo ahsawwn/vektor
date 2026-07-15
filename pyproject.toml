@@ -16,6 +16,9 @@ dependencies = [
     "pyside6 (>=6.11.1,<7.0.0)",
     "speechrecognition (>=3.17.0,<4.0.0)",
     "pyttsx3 (>=2.99,<3.0)",
+    "fastapi (>=0.139.0,<0.140.0)",
+    "uvicorn (>=0.51.0,<0.52.0)",
+    "websockets (>=16.1,<17.0)",
 ]
 
 [build-system]
