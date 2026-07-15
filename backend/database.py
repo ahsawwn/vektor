@@ -47,6 +47,11 @@ def save_message(role: str, content: str) -> int:
     return msg.id
 
 
+def count_messages() -> int:
+    with Session(engine) as sess:
+        return sess.exec(select(ConversationLog.id)).all().__len__()
+
+
 def delete_all_conversations() -> None:
     with Session(engine) as sess:
         for r in sess.exec(select(ConversationLog)).all():

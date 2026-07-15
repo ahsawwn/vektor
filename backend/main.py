@@ -8,20 +8,19 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from sqlmodel import Session, select
 
 from config import OLLAMA_HOST, OLLAMA_MODEL
 from core.agent import VektorAgent
-from database.connection import engine
-from database.models import UserPreference
 
 from . import commands, database as db, memory_vector, voice_engine
 
 _HERE = Path(__file__).resolve().parent
 _FRONTEND_DIST = _HERE.parent / "frontend" / "dist"
+_SPA_HTML = _FRONTEND_DIST / "index.html"
 
 _active_connections: set[WebSocket] = set()
 _agent = VektorAgent()
+_has_greeted = False
 
 
 @asynccontextmanager
@@ -30,13 +29,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 _LEARN_RE = re.compile(
     r"(?:remember|learn)\s+that\s+(.+?)\s+(?:is|uses?|has|prefers?|runs?on)\s+(.+)",
@@ -46,15 +39,6 @@ _REMEMBER_RE = re.compile(
     r"(?:remember|learn)\s+['\"](.+?)['\"]\s+(?:as|is|=|->)\s+['\"](.+?)['\"]",
     re.IGNORECASE,
 )
-
-
-async def _broadcast(data: dict) -> None:
-    msg = json.dumps(data)
-    for ws in _active_connections.copy():
-        try:
-            await ws.send_text(msg)
-        except Exception:
-            _active_connections.discard(ws)
 
 
 async def _handle_chat(user_text: str, ws: WebSocket) -> None:
@@ -107,8 +91,7 @@ async def _handle_chat(user_text: str, ws: WebSocket) -> None:
 
     scaffold_match = re.search(
         r"(?:build|create|generate|scaffold)\s+(?:a\s+)?.*?(?:page|site|landing|ui|html)",
-        user_text,
-        re.IGNORECASE,
+        user_text, re.IGNORECASE,
     )
     if scaffold_match:
         html_match = re.search(r"(<!DOCTYPE html>.*?</html>)", reply, re.DOTALL)
@@ -117,12 +100,8 @@ async def _handle_chat(user_text: str, ws: WebSocket) -> None:
             path = generate_page(html_match.group(1))
             await ws.send_json({"type": "preview", "path": str(path)})
 
-    safe, reason = commands.check_safe(user_text)
-    if not safe and any(cmd in user_text.lower() for cmd in ("list", "show", "create", "make", "run", "delete", "remove", "copy", "move")):
-        pass
     cmd_keywords = ["list", "ls", "cat", "echo", "mkdir", "touch", "pwd", "whoami", "date", "uname", "df", "du", "head", "tail"]
     if any(kw in user_text.lower().split() for kw in cmd_keywords):
-        import shlex
         def _do_exec():
             return commands.run(user_text)
         output = await loop.run_in_executor(None, _do_exec)
@@ -131,9 +110,28 @@ async def _handle_chat(user_text: str, ws: WebSocket) -> None:
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
+    global _has_greeted
     await ws.accept()
     _active_connections.add(ws)
+
     await ws.send_json({"type": "status", "state": "idle", "model": OLLAMA_MODEL})
+
+    msg_count = db.count_messages()
+    if msg_count == 0 and not _has_greeted:
+        _has_greeted = True
+        greeting = "Vektor online. System ready."
+        await ws.send_json({"type": "message", "role": "assistant", "content": greeting})
+        loop = asyncio.get_event_loop()
+        try:
+            await loop.run_in_executor(None, voice_engine.speak, greeting)
+        except Exception:
+            pass
+    else:
+        history = db.get_recent_messages(20)
+        if history:
+            await ws.send_json({"type": "history", "messages": history})
+            await ws.send_json({"type": "message", "role": "assistant", "content": f"Session resumed. {msg_count} messages in memory."})
+
     try:
         while True:
             raw = await ws.receive_text()
@@ -148,11 +146,14 @@ async def websocket_endpoint(ws: WebSocket):
             elif msg_type == "voice":
                 await ws.send_json({"type": "status", "state": "listening"})
                 loop = asyncio.get_event_loop()
-                text = await loop.run_in_executor(None, voice_engine.listen)
-                if text:
-                    await ws.send_json({"type": "voice_text", "text": text})
-                    await ws.send_json({"type": "status", "state": "thinking"})
-                    await _handle_chat(text, ws)
+                try:
+                    text = await loop.run_in_executor(None, voice_engine.listen)
+                    if text:
+                        await ws.send_json({"type": "voice_text", "text": text})
+                        await ws.send_json({"type": "status", "state": "thinking"})
+                        await _handle_chat(text, ws)
+                except Exception as e:
+                    await ws.send_json({"type": "message", "role": "assistant", "content": f"[voice error] {e}"})
                 await ws.send_json({"type": "status", "state": "idle"})
 
             elif msg_type == "execute":
@@ -182,7 +183,7 @@ async def websocket_endpoint(ws: WebSocket):
 async def api_status():
     return {
         "model": OLLAMA_MODEL,
-        "messages": len(db.get_recent_messages(1000)),
+        "messages": db.count_messages(),
         "preferences": db.get_preferences(),
         "vector_count": memory_vector.count(),
     }
@@ -191,9 +192,6 @@ async def api_status():
 @app.get("/api/history")
 async def api_history(limit: int = 50):
     return db.get_recent_messages(limit)
-
-
-_SPA_HTML = _FRONTEND_DIST / "index.html"
 
 
 @app.get("/{path:path}")

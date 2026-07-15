@@ -7,13 +7,6 @@ interface Props {
   onToggleVoice: () => void;
 }
 
-const COLORS = {
-  idle: { r: 148, g: 163, b: 184 },
-  listening: { r: 59, g: 130, b: 246 },
-  thinking: { r: 167, g: 139, b: 250 },
-  executing: { r: 34, g: 197, b: 94 },
-};
-
 export default function JarvisCore({ status, onToggleVoice }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
@@ -34,64 +27,94 @@ export default function JarvisCore({ status, onToggleVoice }: Props) {
     const cx = rect.width / 2;
     const cy = rect.height / 2;
     const maxR = Math.min(cx, cy) * 0.7;
-    const color = COLORS[status] || COLORS.idle;
 
     const animate = (t: number) => {
       ctx.clearRect(0, 0, rect.width, rect.height);
       timeRef.current = t / 1000;
 
-      const pulse = 0.85 + 0.15 * Math.sin(timeRef.current * 2);
+      const pulse = 0.85 + 0.15 * Math.sin(timeRef.current * 1.5);
       const radius = maxR * pulse;
 
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.2);
-      grad.addColorStop(0, `rgba(${color.r},${color.g},${color.b},0.3)`);
-      grad.addColorStop(0.4, `rgba(${color.r},${color.g},${color.b},0.15)`);
-      grad.addColorStop(1, `rgba(${color.r},${color.g},${color.b},0)`);
+      // Glow
+      const glow = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius * 1.5);
+      glow.addColorStop(0, 'rgba(0, 255, 65, 0.15)');
+      glow.addColorStop(0.5, 'rgba(0, 255, 65, 0.05)');
+      glow.addColorStop(1, 'rgba(0, 255, 65, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, rect.width, rect.height);
 
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius * 1.2, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
-
+      // Main ring
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${color.r},${color.g},${color.b},0.5)`;
+      ctx.strokeStyle = 'rgba(0, 255, 65, 0.6)';
       ctx.lineWidth = 1.5;
+      ctx.shadowColor = 'rgba(0, 255, 65, 0.5)';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Inner ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.7, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 255, 65, 0.2)';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      if (status === 'listening' || status === 'thinking') {
-        const rings = 3;
-        for (let i = 0; i < rings; i++) {
-          const phase = timeRef.current * (status === 'thinking' ? 3 : 1.5) + i * 2.1;
-          const r = radius * (0.7 + 0.3 * Math.sin(phase));
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(${color.r},${color.g},${color.b},${0.2 - i * 0.05})`;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-      }
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#00ff41';
+      ctx.shadowColor = 'rgba(0, 255, 65, 0.8)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
       if (status === 'listening') {
-        const waves = 4;
+        const waves = 3;
         for (let i = 0; i < waves; i++) {
-          const phase = timeRef.current * 4 + i * 1.57;
-          const r = radius * (0.9 + 0.15 * Math.sin(phase));
+          const r = radius * (0.8 + 0.2 * Math.sin(timeRef.current * 3 + i * 2.09));
           ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2 * (0.5 + 0.5 * Math.sin(phase)));
-          ctx.strokeStyle = `rgba(59,130,246,${0.15 - i * 0.03})`;
+          ctx.arc(cx, cy, r, 0, Math.PI * (1 + Math.sin(timeRef.current * 2 + i * 2.09)));
+          ctx.strokeStyle = `rgba(0, 255, 65, ${0.3 - i * 0.08})`;
           ctx.lineWidth = 1;
           ctx.stroke();
         }
       }
 
-      if (status === 'executing') {
-        const angle = timeRef.current * 2;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius * 1.1, angle, angle + Math.PI * 1.5);
-        ctx.strokeStyle = `rgba(34,197,94,0.4)`;
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      if (status === 'thinking' || status === 'executing') {
+        const speed = status === 'thinking' ? 2 : 3;
+        for (let i = 0; i < 3; i++) {
+          const angle = timeRef.current * speed + i * 2.09;
+          const r = radius * (0.6 + 0.3 * Math.sin(timeRef.current * 2 + i));
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, angle, angle + Math.PI * 0.8);
+          ctx.strokeStyle = `rgba(0, 255, 65, ${0.4 - i * 0.1})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
+
+      // Hex grid overlay
+      const hexSize = 12;
+      for (let row = -2; row <= 2; row++) {
+        for (let col = -2; col <= 2; col++) {
+          if (row === 0 && col === 0) continue;
+          const hx = cx + col * hexSize * 1.5;
+          const hy = cy + row * hexSize * Math.sqrt(3) + (col % 2) * hexSize * Math.sqrt(3) / 2;
+          const dist = Math.sqrt((hx - cx) ** 2 + (hy - cy) ** 2);
+          if (dist > radius * 1.3) continue;
+          ctx.beginPath();
+          for (let s = 0; s < 6; s++) {
+            const a = Math.PI / 3 * s - Math.PI / 6;
+            const px = hx + hexSize * 0.4 * Math.cos(a);
+            const py = hy + hexSize * 0.4 * Math.sin(a);
+            s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.strokeStyle = `rgba(0, 255, 65, ${0.06 + 0.04 * Math.sin(timeRef.current + dist * 0.1)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
       }
 
       frameRef.current = requestAnimationFrame(animate);
@@ -104,24 +127,22 @@ export default function JarvisCore({ status, onToggleVoice }: Props) {
   return (
     <motion.div
       className="relative flex items-center justify-center cursor-pointer"
-      style={{ width: 200, height: 200 }}
+      style={{ width: 160, height: 160 }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onToggleVoice}
     >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
-      />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       <motion.div
-        className="absolute z-10 text-[11px] font-medium tracking-widest uppercase"
-        style={{ color: '#94A3B8' }}
-        animate={{ opacity: status === 'idle' ? 0.6 : 1 }}
+        className="absolute z-10 text-[9px] font-bold tracking-widest uppercase"
+        style={{ color: '#006600' }}
+        animate={{ opacity: status === 'idle' ? [0.3, 0.6, 0.3] : 1 }}
+        transition={{ repeat: Infinity, duration: 2 }}
       >
-        {status === 'idle' && 'Click to speak'}
-        {status === 'listening' && 'Listening...'}
-        {status === 'thinking' && 'Thinking...'}
-        {status === 'executing' && 'Executing...'}
+        {status === 'idle' && 'SPACE_TO_TALK'}
+        {status === 'listening' && 'LISTENING'}
+        {status === 'thinking' && 'PROCESSING'}
+        {status === 'executing' && 'EXECUTING'}
       </motion.div>
     </motion.div>
   );

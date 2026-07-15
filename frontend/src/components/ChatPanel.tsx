@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Bot, Code } from 'lucide-react';
+import { Terminal as TerminalIcon, Code } from 'lucide-react';
 import type { ChatMessage } from '../hooks/useWebSocket';
 
 interface Props {
@@ -31,18 +31,35 @@ export default function ChatPanel({ messages, onSend, disabled }: Props) {
     if (codeBlock) {
       return (
         <div className="mt-2">
-          <div className="flex items-center gap-1.5 text-[10px] text-[#64748B] font-mono mb-1">
-            <Code size={12} />
-            {codeBlock[1] || 'code'}
+          <div className="flex items-center gap-1.5 text-[10px] mb-1" style={{ color: '#006600' }}>
+            <Code size={11} />
+            {'// '}{codeBlock[1] || 'code'}
           </div>
-          <pre className="bg-[#1E293B] border border-[#334155] rounded-lg p-3 overflow-x-auto text-[12px] leading-relaxed font-mono text-[#A5B4FC]">
-            {codeBlock[2]}
-          </pre>
+          <pre
+            className="p-3 overflow-x-auto text-[12px] leading-relaxed"
+            style={{
+              background: '#050505',
+              border: '1px solid #003300',
+              color: '#00ff41',
+            }}
+          >
+<code>{codeBlock[2]}</code></pre>
         </div>
       );
     }
+
+    // Check for command output
+    if (content.startsWith('$ ')) {
+      return (
+        <div className="flex items-start gap-1.5 text-[12px] leading-relaxed" style={{ color: '#00cc33' }}>
+          <span style={{ color: '#006600' }}>{'>'}</span>
+          <span>{content.slice(2)}</span>
+        </div>
+      );
+    }
+
     return (
-      <div className="text-[13px] leading-relaxed text-[#E2E8F0] whitespace-pre-wrap">
+      <div className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: '#00cc33' }}>
         {content}
       </div>
     );
@@ -50,31 +67,42 @@ export default function ChatPanel({ messages, onSend, disabled }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        {messages.length === 0 && (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <TerminalIcon size={24} style={{ color: '#003300' }} className="mx-auto mb-3" />
+              <p className="text-[11px] tracking-wider" style={{ color: '#006600' }}>
+                {'// AWAITING INPUT'}
+              </p>
+              <p className="text-[10px] mt-1" style={{ color: '#004400' }}>
+                Type a message or use voice trigger
+              </p>
+            </div>
+          </div>
+        )}
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              transition={{ duration: 0.2 }}
             >
               <div
-                className={`max-w-[75%] rounded-xl px-4 py-3 ${
-                  msg.role === 'user'
-                    ? 'bg-[#1E293B] border border-[#334155]'
-                    : 'bg-[#0F172A] border border-[#1E3A5C]'
-                }`}
+                className="px-4 py-2.5 rounded-sm"
+                style={{
+                  background: msg.role === 'user' ? '#0d1117' : 'transparent',
+                  border: msg.role === 'user' ? '1px solid #003300' : '1px solid transparent',
+                  borderLeft: msg.role === 'assistant' ? '2px solid #00ff41' : 'none',
+                }}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  {msg.role === 'user' ? (
-                    <User size={12} className="text-[#60A5FA]" />
-                  ) : (
-                    <Bot size={12} className="text-[#A78BFA]" />
-                  )}
-                  <span className="text-[10px] font-semibold tracking-wider uppercase text-[#64748B]">
-                    {msg.role === 'user' ? 'You' : 'Vektor'}
+                  <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: msg.role === 'user' ? '#006600' : '#00ff41' }}>
+                    {msg.role === 'user' ? '>> USER' : 'VEKTOR'}
+                  </span>
+                  <span className="text-[8px]" style={{ color: '#004400' }}>
+                    {new Date().toLocaleTimeString()}
                   </span>
                 </div>
                 {renderContent(msg.content)}
@@ -85,21 +113,30 @@ export default function ChatPanel({ messages, onSend, disabled }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="px-4 pb-4 pt-2 border-t border-[#334155]">
+      <form onSubmit={handleSubmit} className="px-4 pb-3 pt-2" style={{ borderTop: '1px solid #003300' }}>
         <div className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Ask Vektor anything..."
-            disabled={disabled}
-            className="flex-1 bg-[#0F172A] border border-[#334155] rounded-xl px-4 py-3 text-[13px] text-[#E2E8F0] placeholder-[#64748B] outline-none focus:border-[#3B82F6] transition-colors disabled:opacity-50"
-          />
+          <div className="flex-1 flex items-center gap-2 px-3" style={{ background: '#050505', border: '1px solid #003300' }}>
+            <span style={{ color: '#006600', fontSize: 12 }}>{'>'}</span>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="type here..."
+              disabled={disabled}
+              className="flex-1 bg-transparent py-2.5 text-[13px] outline-none"
+              style={{ color: '#00ff41', caretColor: '#00ff41' }}
+            />
+          </div>
           <button
             type="submit"
             disabled={disabled}
-            className="bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-50 text-white rounded-xl px-5 py-3 text-[13px] font-semibold transition-colors"
+            className="px-4 py-2.5 text-[11px] font-bold tracking-wider uppercase disabled:opacity-40"
+            style={{
+              background: '#003300',
+              color: '#00ff41',
+              border: '1px solid #005500',
+            }}
           >
-            Send
+            Enter
           </button>
         </div>
       </form>

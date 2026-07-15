@@ -20,33 +20,31 @@ export default function Terminal({ output, onClear, onClose }: Props) {
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className="absolute bottom-0 left-0 right-0 z-50"
         >
-          <div className="bg-[#1E293B] border-t border-[#334155] rounded-t-xl mx-4 shadow-2xl">
-            <div className="flex items-center justify-between px-4 py-2 border-b border-[#334155]">
+          <div style={{ background: '#050505', borderTop: '1px solid #003300' }} className="mx-2 mb-2 rounded-sm">
+            <div className="flex items-center justify-between px-4 py-1.5" style={{ borderBottom: '1px solid #003300' }}>
               <div className="flex items-center gap-2">
-                <TerminalIcon size={14} className="text-[#22C55E]" />
-                <span className="text-[11px] font-semibold tracking-wider uppercase text-[#64748B]">
-                  Terminal
+                <TerminalIcon size={12} style={{ color: '#00ff41' }} />
+                <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: '#006600' }}>
+                  // EXECUTION_LOG
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={onClear}
-                  className="text-[10px] text-[#64748B] hover:text-[#F1F5F9] transition-colors px-2 py-1 rounded"
+                  className="text-[9px] uppercase tracking-wider px-2 py-0.5"
+                  style={{ color: '#006600' }}
                 >
                   Clear
                 </button>
-                <button
-                  onClick={onClose}
-                  className="text-[#64748B] hover:text-[#F1F5F9] transition-colors"
-                >
-                  <X size={14} />
+                <button onClick={onClose} style={{ color: '#006600' }}>
+                  <X size={12} />
                 </button>
               </div>
             </div>
-            <div className="p-4 max-h-48 overflow-y-auto font-mono text-[12px] leading-relaxed space-y-1">
+            <div className="p-3 max-h-40 overflow-y-auto font-mono space-y-0.5">
               {output.map((line, i) => (
-                <div key={i} className="text-[#94A3B8]">
-                  <span className="text-[#475569] mr-2">{`$`}</span>
+                <div key={i} className="text-[11px] leading-relaxed" style={{ color: '#00cc33' }}>
+                  <span style={{ color: '#006600' }}>{'$ '}</span>
                   {line}
                 </div>
               ))}
