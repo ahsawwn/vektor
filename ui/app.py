@@ -150,3 +150,25 @@ class MainWindow(QMainWindow):
         if self._is_fullscreen:
             self.showNormal()
             self._is_fullscreen = False
+
+
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    from PySide6.QtGui import QFont
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication(sys.argv)
+    app.setApplicationName("Vektor")
+    font = QFont("JetBrains Mono", 10)
+    font.setStyleHint(QFont.StyleHint.Monospace)
+    app.setFont(font)
+
+    stylesheet_path = Path(__file__).parent / "assets" / "style.qss"
+    if stylesheet_path.exists():
+        with open(stylesheet_path) as f:
+            app.setStyleSheet(f.read())
+
+    w = MainWindow()
+    w.show()
+    sys.exit(app.exec())
