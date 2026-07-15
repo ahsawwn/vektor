@@ -98,11 +98,7 @@ QMainWindow {
 }
 
 /* Message bubble containers */
-#MessageContainer {
-    padding: 8px 24px;
-}
-
-#UserMessage {
+QFrame[msgRole="user"] {
     background-color: #1E293B;
     border: 1px solid #334155;
     border-radius: 8px;
@@ -110,12 +106,20 @@ QMainWindow {
     margin: 4px 64px 4px 16px;
 }
 
-#AssistantMessage {
+QFrame[msgRole="assistant"] {
     background-color: #0F172A;
     border: 1px solid #1E3A5C;
     border-radius: 8px;
     padding: 12px 16px;
     margin: 4px 16px 4px 64px;
+}
+
+QFrame[msgRole="system"] {
+    background-color: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 4px 64px;
 }
 
 #MessageRole {

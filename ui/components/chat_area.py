@@ -2,6 +2,7 @@ from datetime import datetime
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QScrollArea,
@@ -11,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 
-class MessageBubble(QWidget):
+class MessageBubble(QFrame):
     def __init__(
         self,
         role: str,
@@ -20,7 +21,7 @@ class MessageBubble(QWidget):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setObjectName("MessageContainer")
+        self.setFrameShape(QFrame.Shape.NoFrame)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -31,15 +32,17 @@ class MessageBubble(QWidget):
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(8)
 
-        role_label = QLabel("You" if role == "user" else "Vektor")
+        role_label = QLabel()
         role_label.setObjectName("MessageRole")
-        header_layout.addWidget(role_label)
 
+        ts_label = QLabel()
+        ts_label.setObjectName("MessageTimestamp")
         if timestamp:
-            ts = QLabel(timestamp.strftime("%H:%M"))
-            ts.setObjectName("MessageTimestamp")
-            header_layout.addWidget(ts)
+            ts_label.setText(timestamp.strftime("%H:%M"))
+        ts_label.setVisible(timestamp is not None)
 
+        header_layout.addWidget(role_label)
+        header_layout.addWidget(ts_label)
         header_layout.addStretch()
         layout.addWidget(header)
 
@@ -49,33 +52,31 @@ class MessageBubble(QWidget):
         self.text_browser.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.text_browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.text_browser.setMarkdown(content)
-        self.text_browser.document().setDocumentMargin(0)
+        self.text_browser.document().setDocumentMargin(8)
         self.text_browser.setFrameShape(QTextBrowser.Shape.NoFrame)
-
-        if role == "user":
-            self.setObjectName("UserMessage")
-            role_label.setStyleSheet("color: #60A5FA;")
-        elif role == "system":
-            self.setObjectName("SystemMessage")
-            role_label.setStyleSheet("color: #94A3B8;")
-            role_label.setText("System")
-        else:
-            self.setObjectName("AssistantMessage")
-            role_label.setStyleSheet("color: #A78BFA;")
-
         layout.addWidget(self.text_browser)
 
-        self._adjust_height()
+        if role == "user":
+            self.setProperty("msgRole", "user")
+            role_label.setText("You")
+            role_label.setStyleSheet("color: #60A5FA; font-weight: 700; font-size: 11px; text-transform: uppercase;")
+        elif role == "system":
+            self.setProperty("msgRole", "system")
+            role_label.setText("System")
+            role_label.setStyleSheet("color: #94A3B8; font-weight: 700; font-size: 11px; text-transform: uppercase;")
+        else:
+            self.setProperty("msgRole", "assistant")
+            role_label.setText("Vektor")
+            role_label.setStyleSheet("color: #A78BFA; font-weight: 700; font-size: 11px; text-transform: uppercase;")
 
-    def _adjust_height(self) -> None:
-        doc = self.text_browser.document()
-        doc.setTextWidth(self.text_browser.viewport().width())
-        height = doc.size().height() + 8
-        self.text_browser.setFixedHeight(int(height))
+        self.style().unpolish(self)
+        self.style().polish(self)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        self._adjust_height()
+        doc = self.text_browser.document()
+        doc.setTextWidth(self.text_browser.viewport().width())
+        self.text_browser.setFixedHeight(int(doc.size().height() + 16))
 
 
 class ChatArea(QWidget):

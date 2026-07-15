@@ -71,9 +71,10 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(self.splitter)
 
+        from config import OLLAMA_MODEL
         self.status_bar = QStatusBar()
         self.status_bar.setObjectName("StatusBar")
-        self.status_bar.showMessage("LLM: idle  |  DB: connected  |  Model: llama3  |  Voice: off")
+        self.status_bar.showMessage(f"LLM: idle  |  DB: connected  |  Model: {OLLAMA_MODEL}  |  Voice: off")
         self.setStatusBar(self.status_bar)
 
     def _bind_shortcuts(self) -> None:
@@ -123,12 +124,13 @@ class MainWindow(QMainWindow):
         self._show_preview()
 
     def _on_thinking_changed(self, thinking: bool) -> None:
+        from config import OLLAMA_MODEL
         self.input_bar.set_input_enabled(not thinking)
         self.sidebar.set_llm_status("thinking" if thinking else "active")
         state = "THINKING" if thinking else "IDLE"
         voice = "on" if self.controller._tts_enabled else "off"
         self.status_bar.showMessage(
-            f"LLM: {state}  |  DB: connected  |  Model: llama3  |  Voice: {voice}"
+            f"LLM: {state}  |  DB: connected  |  Model: {OLLAMA_MODEL}  |  Voice: {voice}"
         )
 
     def _show_preview(self) -> None:
